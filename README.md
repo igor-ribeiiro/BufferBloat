@@ -4,6 +4,12 @@
 
 https://github.com/mininet/mininet/wiki/Bufferbloat
 
+https://www.youtube.com/watch?v=ZUzHKDIUFh4
+
+http://installfights.blogspot.com/2016/12/exception-could-not-find-default.html
+
+https://mr-khan.gitlab.io/linux/2018/05/02/kill-specific-port-on-linux.html
+
 ## mininet
 
 http://www.brianlinkletter.com/how-to-install-mininet-sdn-network-simulator/

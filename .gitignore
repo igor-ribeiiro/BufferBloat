@@ -1,4 +1,6 @@
 .idea
+cs144_bufferbloat/http/nohup.out
+cs144_bufferbloat/iperf-recv.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
