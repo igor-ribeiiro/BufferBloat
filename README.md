@@ -8,6 +8,17 @@ https://github.com/mininet/mininet/wiki/Bufferbloat
 
 http://www.brianlinkletter.com/how-to-install-mininet-sdn-network-simulator/
 
+
+### Install
+
+cd mininet/util
+./install.sh -a
+
+### Test Installation
+
+sudo mn --test pingall
+
+
 ## Codel
 
 https://pdfs.semanticscholar.org/960a/d0c1cc8b2537530aea423ca48b65f1ff67c0.pdf?_ga=2.187533032.1122841570.1572963838-60196217.1572963838
