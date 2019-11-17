@@ -1,7 +1,3 @@
-#!/usr/bin/python
-
-"CS144 In-class exercise: Buffer Bloat"
-
 from mininet.topo import Topo
 from mininet.node import CPULimitedHost
 from mininet.link import TCLink
