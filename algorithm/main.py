@@ -47,7 +47,7 @@ class PacketFlow:
 
     def add_packet_to_buffer(self):
         while(True):
-            sleep(2)
+            sleep(1)
             with self.buffer_lock:
                 if not self.buffer.is_full():
                     self.buffer.push(self.current_packet)
@@ -58,7 +58,7 @@ class PacketFlow:
 
     def remove_packet_from_buffer(self):
         while True:
-            sleep(3)
+            sleep(1)
             with self.buffer_lock:
                 if not self.buffer.is_empty():
                     packet = self.buffer.pop()
@@ -80,4 +80,5 @@ if __name__ == "__main__":
     removing_packets_thread.start()
 
     adding_packets_thread.join()
-    packet_flow.print_queue()
+    removing_packets_thread.join()
+
