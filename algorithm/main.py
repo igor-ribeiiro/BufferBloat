@@ -1,6 +1,7 @@
 import threading
 import os
 import random
+import matplotlib.pyplot as plt
 from time import sleep
 
 
@@ -54,7 +55,7 @@ class PacketFlow:
         self.transfer_time = transfer_time  # in seconds. This is the sleep time
         self.buffer_size = buffer_size
         self.running = True
-        self.error_ammout = 1.0 / 10.0  # 10 percent error
+        self.error_ammout = 0.2  # 20 percent error
         self.average_times = []
         self.tracking_time = 0.1
 
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         elif command == "b" or command == "B":
             for i in range(packet_flow.buffer_size):
                 packet_flow.add_packet_to_buffer(5)
-            print("")
+            print("Bufferbloat!")
             print("")
             print("")
 
@@ -172,4 +173,13 @@ if __name__ == "__main__":
     keep_track_of_times_thread.join()
 
     average_times = packet_flow.average_times
-    print("Average times = ", average_times)
+
+    xs = []
+    ys = []
+    for i in range(len(average_times)):
+        xs.append((i+1) * packet_flow.tracking_time)
+        ys.append(average_times[i])
+
+    plt.plot(xs, ys)
+    plt.ylabel('some numbers')
+    plt.show()
