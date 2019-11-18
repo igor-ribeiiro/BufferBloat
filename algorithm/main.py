@@ -55,9 +55,9 @@ class PacketFlow:
         self.transfer_time = transfer_time  # in seconds. This is the sleep time
         self.buffer_size = buffer_size
         self.running = True
-        self.error_ammout = 0.2  # 20 percent error
+        self.error_ammout = 0.05  # 5 percent error
         self.average_times = []
-        self.tracking_time = 0.1
+        self.tracking_time = 0.01
 
     def add_packet_to_buffer(self, packet = None):
         if not self.buffer.is_full():
@@ -181,5 +181,7 @@ if __name__ == "__main__":
         ys.append(average_times[i])
 
     plt.plot(xs, ys)
-    plt.ylabel('some numbers')
+    plt.ylabel('Average time for a packet to be delivered (s)')
+    plt.xlabel('Time (s)')
+    plt.suptitle('Total delay in buffer')
     plt.show()
