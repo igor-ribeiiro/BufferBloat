@@ -65,7 +65,7 @@ class Buffer:
         self.last_delay_time_before_bufferbloat = 0
         self.TARGET = self.buffer_size * self.transfer_time / 10
         self.DROP_STATE = False
-        self.INTERVAL = 0.0
+        self.INTERVAL = 2 * self.transfer_time
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
         self.adding_packets_thread.start()
@@ -111,8 +111,9 @@ class Buffer:
     def remove_packet_from_buffer_with_codel(self):
         time = 0
         while self.running:
-            time += 0.1 * self.transfer_time
             if not self.buffer.is_empty():
+                time += self.generate_random_transfer_time()
+
                 current_delay_time = self.calculate_average_time()
 
                 if fabs(current_delay_time - self.last_delay_time_before_bufferbloat) > self.TARGET:
@@ -123,8 +124,9 @@ class Buffer:
                     self.last_delay_time_before_bufferbloat = current_delay_time
 
                 if self.DROP_STATE:
-                    self.buffer.pop()
-                    self.INTERVAL = 10
+                    if time > self.INTERVAL:
+                        time = 0
+                        self.buffer.pop()
                 else:
                     sleep(self.generate_random_transfer_time())
                     self.buffer.pop()
