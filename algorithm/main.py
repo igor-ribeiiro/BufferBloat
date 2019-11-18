@@ -42,8 +42,8 @@ class Buffer:
 
 
 class PacketFlow:
-    def __init__(self, sleep_time = 1):
-        self.buffer = Buffer(size=10)
+    def __init__(self, buffer_size = int(10), sleep_time = 5e-3):
+        self.buffer = Buffer(size=buffer_size)
         self.current_packet = 0
         self.buffer_lock = threading.Lock()
         self.transfer_time = sleep_time  # in seconds. This is the sleep time
@@ -53,7 +53,7 @@ class PacketFlow:
             if not self.buffer.is_full():
                 sleep(self.transfer_time)
                 self.buffer.push(self.current_packet)
-                print("Packet = %d was added to buffer" % self.current_packet)
+                # print("Packet = %d was added to buffer" % self.current_packet)
                 self.current_packet += 1
             else:
                 pass
@@ -62,12 +62,18 @@ class PacketFlow:
     def remove_packet_from_buffer(self):
         while True:
             if not self.buffer.is_empty():
-                sleep(self.transfer_time)
-                packet = self.buffer.pop()
-                print("Packet = %d was removed from buffer" % packet)
+                sleep(self.transfer_time*2)
+                self.buffer.pop()
+                # packet = self.buffer.pop()
+                # print("Packet = %d was removed from buffer" % packet)
             else:
                 pass
                 # print("Buffer is empty, not removing packet")
+
+    def print_buffer_info(self):
+        while True:
+            sleep(1)
+            print("Queue size = ", self.buffer.size_queue)
 
     def print_queue(self):
         self.buffer.print()
@@ -82,6 +88,11 @@ if __name__ == "__main__":
     removing_packets_thread = threading.Thread(target=packet_flow.remove_packet_from_buffer)
     removing_packets_thread.start()
 
+    printing_buffer_thread = threading.Thread(target=packet_flow.print_buffer_info)
+    printing_buffer_thread.start()
+
+
+
     adding_packets_thread.join()
     removing_packets_thread.join()
-
+    printing_buffer_thread.join()
