@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from time import sleep
 
 
-class Buffer:
+class Queue:
     def __init__(self, size = 10):
         self.size = size
         self.v = [-1 for i in range(size)]
@@ -47,9 +47,10 @@ class Buffer:
                 print("%d, " % self.v[(self.begin_queue + i) % self.size], end = '')
         print("]")
 
-class PacketFlow:
+
+class NormalBuffer:
     def __init__(self, buffer_size = int(100), transfer_time = 50e-3):
-        self.buffer = Buffer(size=buffer_size)
+        self.buffer = Queue(size=buffer_size)
         self.current_packet = 0
         self.buffer_lock = threading.Lock()
         self.transfer_time = transfer_time  # in seconds. This is the sleep time
@@ -58,6 +59,19 @@ class PacketFlow:
         self.error_ammout = 0.05  # 5 percent error
         self.average_times = []
         self.tracking_time = 0.01
+
+        self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
+        self.adding_packets_thread.start()
+        self.removing_packets_thread = threading.Thread(target=self.remove_packet_from_buffer)
+        self.removing_packets_thread.start()
+        self.keep_track_of_times_thread = threading.Thread(target=self.keep_track_of_averages_times)
+        self.keep_track_of_times_thread.start()
+
+    def end(self):
+        self.running = False
+        self.adding_packets_thread.join()
+        self.removing_packets_thread.join()
+        self.keep_track_of_times_thread.join()
 
     def add_packet_to_buffer(self, packet = None):
         if not self.buffer.is_full():
@@ -126,18 +140,24 @@ def print_keyboard_commands_info():
     print("Press e or q to exit")
     print("")
 
+def plot_average_times(buffer, name=None):
+    average_times = buffer.average_times
+
+    xs = []
+    ys = []
+    for i in range(len(average_times)):
+        xs.append((i+1) * buffer.tracking_time)
+        ys.append(average_times[i])
+
+    plt.plot(xs, ys)
+    plt.suptitle('Total delay in buffer with ' + name)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Average time for a packet to be delivered (s)')
+    plt.show()
+
 
 if __name__ == "__main__":
-    packet_flow = PacketFlow()
-
-    adding_packets_thread = threading.Thread(target=packet_flow.keep_adding_packet_to_buffer)
-    adding_packets_thread.start()
-
-    removing_packets_thread = threading.Thread(target=packet_flow.remove_packet_from_buffer)
-    removing_packets_thread.start()
-
-    keep_track_of_times_thread = threading.Thread(target=packet_flow.keep_track_of_averages_times)
-    keep_track_of_times_thread.start()
+    normal_buffer = NormalBuffer()
 
     os.system("clear")
     print_keyboard_commands_info()
@@ -148,17 +168,18 @@ if __name__ == "__main__":
     while True:
         command = input("Command: ")
         if command == 'e' or command == 'E' or command == 'q' or command == "Q":
-            packet_flow.running = False
+            normal_buffer.end()
             break
+    
         os.system("clear")
         print_keyboard_commands_info()
 
         if command == "p" or command == "P":
-            packet_flow.print_buffer_info()
+            normal_buffer.print_buffer_info()
 
         elif command == "b" or command == "B":
-            for i in range(packet_flow.buffer_size):
-                packet_flow.add_packet_to_buffer(5)
+            for i in range(normal_buffer.buffer_size):
+                normal_buffer.add_packet_to_buffer(5)
             print("Bufferbloat!")
             print("")
             print("")
@@ -168,20 +189,5 @@ if __name__ == "__main__":
             print("")
             print("")
 
-    adding_packets_thread.join()
-    removing_packets_thread.join()
-    keep_track_of_times_thread.join()
-
-    average_times = packet_flow.average_times
-
-    xs = []
-    ys = []
-    for i in range(len(average_times)):
-        xs.append((i+1) * packet_flow.tracking_time)
-        ys.append(average_times[i])
-
-    plt.plot(xs, ys)
-    plt.ylabel('Average time for a packet to be delivered (s)')
-    plt.xlabel('Time (s)')
-    plt.suptitle('Total delay in buffer')
-    plt.show()
+    plot_average_times(normal_buffer, "no bufferbloat algorithm")
+    # plot_average_times(normal_buffer, "CoDel")
