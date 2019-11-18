@@ -66,7 +66,7 @@ class Buffer:
         self.last_delay_time_before_bufferbloat = 0
         self.TARGET = self.buffer_size * self.transfer_time / 10
         self.DROP_STATE = False
-        self.INTERVAL = 100 * self.transfer_time
+        self.INTERVAL = 1 * self.transfer_time
         self.removal_ratio = 0.4
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
@@ -129,10 +129,10 @@ class Buffer:
                     if time > self.INTERVAL:
                         time = 0
                         self.buffer.pop()
-                        self.INTERVAL *= 1 + 2.7 / self.buffer_size
+                        self.INTERVAL *= 1 + 0.1 / self.buffer_size
 
-                    sleep(self.generate_random_transfer_time() * self.removal_ratio)
-                    self.buffer.pop()
+                sleep(self.generate_random_transfer_time() * self.removal_ratio)
+                self.buffer.pop()
 
                 self.last_delay_time = current_delay_time
 
@@ -195,11 +195,7 @@ def plot_number_of_packets(buffer, codel=False):
         ys.append(number_of_packets[i])
 
     plt.plot(xs, ys)
-    if codel:
-        plt.legend(['CoDel'])
-    else:
-        plt.legend(['no bufferbloat algorithm'])
-        
+    plt.legend(['no bufferbloat algorithm', 'CoDel'])
     plt.suptitle('Number of packets in buffer')
     plt.xlabel('Time (s)')
     plt.ylabel('Number of packets')
