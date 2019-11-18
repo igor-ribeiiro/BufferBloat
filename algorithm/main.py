@@ -1,6 +1,7 @@
 import threading
 from time import sleep
 
+
 class Buffer:
     def __init__(self, size = 10):
         self.size = size
@@ -39,32 +40,34 @@ class Buffer:
             print("%d " % self.v[(self.begin_queue + i) % self.size], end = '')
         print("")
 
+
 class PacketFlow:
-    def __init__(self):
+    def __init__(self, sleep_time = 1):
         self.buffer = Buffer(size=10)
         self.current_packet = 0
         self.buffer_lock = threading.Lock()
+        self.transfer_time = sleep_time  # in seconds. This is the sleep time
 
     def add_packet_to_buffer(self):
         while(True):
-            sleep(1)
-            with self.buffer_lock:
-                if not self.buffer.is_full():
-                    self.buffer.push(self.current_packet)
-                    print("Packet = %d was added to buffer" % self.current_packet)
-                    self.current_packet += 1
-                else:
-                    print("Buffer is full, not adding packet = %d" % self.current_packet)
+            if not self.buffer.is_full():
+                sleep(self.transfer_time)
+                self.buffer.push(self.current_packet)
+                print("Packet = %d was added to buffer" % self.current_packet)
+                self.current_packet += 1
+            else:
+                pass
+                # print("Buffer is full, not adding packet = %d" % self.current_packet)
 
     def remove_packet_from_buffer(self):
         while True:
-            sleep(1)
-            with self.buffer_lock:
-                if not self.buffer.is_empty():
-                    packet = self.buffer.pop()
-                    print("Packet = %d was removed from buffer" % packet)
-                else:
-                    print("Buffer is empty, not removing packet")
+            if not self.buffer.is_empty():
+                sleep(self.transfer_time)
+                packet = self.buffer.pop()
+                print("Packet = %d was removed from buffer" % packet)
+            else:
+                pass
+                # print("Buffer is empty, not removing packet")
 
     def print_queue(self):
         self.buffer.print()
