@@ -174,7 +174,7 @@ def print_keyboard_commands_info():
     print("")
 
 
-def plot_average_times(buffer, name=None):
+def plot_average_times(buffer, codel=False):
     average_times = buffer.average_times
 
     xs = []
@@ -184,10 +184,14 @@ def plot_average_times(buffer, name=None):
         ys.append(average_times[i])
 
     plt.plot(xs, ys)
-    plt.suptitle('Total delay in buffer with ' + name)
+    if codel:
+        plt.legend(['CoDel'])
+    else:
+        plt.legend(['no bufferbloat algorithm'])
+        
+    plt.suptitle('Total delay in buffer')
     plt.xlabel('Time (s)')
     plt.ylabel('Average time for a packet to be delivered (s)')
-    plt.show()
 
 
 if __name__ == "__main__":
@@ -225,5 +229,6 @@ if __name__ == "__main__":
             print("")
             print("")
 
-    plot_average_times(normal_buffer, "no bufferbloat algorithm")
-    plot_average_times(codel_buffer, "CoDel")
+    plot_average_times(normal_buffer)
+    plot_average_times(codel_buffer, codel=True)
+    plt.show()
