@@ -31,19 +31,45 @@ class Buffer:
     def is_empty(self):
         return self.size_queue == 0
 
+    def print(self):
+        for i in range(self.size_queue):
+            print("%d " % self.v[(self.begin_queue + i) % self.size], end = '')
+        print("")
+
+class PacketFlow:
+    def __init__(self):
+        self.buffer = Buffer(size=10)
+        self.current_packet = 0
+
+    def add_packet_to_buffer(self):
+        if not self.buffer.is_full():
+            self.buffer.push(self.current_packet)
+            print("Packet = %d was added to buffer" % self.current_packet)
+            self.current_packet += 1
+        else:
+            print("Buffer is full, not adding packet = %d" % self.current_packet)
+
+    def remove_packet_from_buffer(self):
+        if not self.buffer.is_empty():
+            packet = self.buffer.pop()
+            print("Packet = %d was removed from buffer" % packet)
+        else:
+            print("Buffer is empty, not removing packet")
+
+    def print_queue(self):
+        self.buffer.print()
+
+
 if __name__ == "__main__":
-    buffer = Buffer()
-    print(buffer.v)
+    packet_flow = PacketFlow()
 
-    for i in range(11):
-        buffer.push(i)
-        print(buffer.v)
+    for i in range(12):
+        packet_flow.print_queue()
+        packet_flow.add_packet_to_buffer()
 
-    for i in range(5):
-        print(buffer.pop())
-        print(buffer.v)
-    
-    for i in range(10, 16):
-        buffer.push(i)
-        print(buffer.v)
-    
+    for i in range(3):
+        packet_flow.remove_packet_from_buffer()
+        packet_flow.print_queue()
+
+    packet_flow.add_packet_to_buffer()
+    packet_flow.print_queue()
