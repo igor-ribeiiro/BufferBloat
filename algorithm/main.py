@@ -65,7 +65,7 @@ class Buffer:
         self.last_delay_time_before_bufferbloat = 0
         self.TARGET = self.buffer_size * self.transfer_time / 10
         self.DROP_STATE = False
-        self.INTERVAL = 2 * self.transfer_time
+        self.INTERVAL = 100 * self.transfer_time
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
         self.adding_packets_thread.start()
@@ -116,20 +116,25 @@ class Buffer:
 
                 current_delay_time = self.calculate_average_time()
 
-                if fabs(current_delay_time - self.last_delay_time_before_bufferbloat) > self.TARGET:
+                if self.DROP_STATE and fabs(current_delay_time - self.last_delay_time_before_bufferbloat) < self.TARGET:
+                    print("Saiu no DROP STATE")
                     self.DROP_STATE = False
 
                 if current_delay_time - self.last_delay_time > self.TARGET:
+                    print("Entrou no DROP STATE")
                     self.DROP_STATE = True
-                    self.last_delay_time_before_bufferbloat = current_delay_time
+                    print("last_delay_time_before_bufferbloat", self.last_delay_time_before_bufferbloat)
+                    self.last_delay_time_before_bufferbloat = self.last_delay_time
 
                 if self.DROP_STATE:
                     if time > self.INTERVAL:
                         time = 0
                         self.buffer.pop()
+                        self.INTERVAL *= 1 + 2.7 / self.buffer_size
                 else:
                     sleep(self.generate_random_transfer_time())
                     self.buffer.pop()
+
                 self.last_delay_time = current_delay_time
 
     def calculate_average_time(self):
@@ -140,7 +145,8 @@ class Buffer:
 
         return total_time
 
-    def print_buffer_info(self):
+    def print_buffer_info(self, name):
+        print(name + ":")
         print("Buffer size = ", self.buffer.size_queue)
         print("Average time for a packet to deliver = %.3fs" % self.calculate_average_time())
         
@@ -198,16 +204,19 @@ if __name__ == "__main__":
         command = input("Command: ")
         if command == 'e' or command == 'E' or command == 'q' or command == "Q":
             normal_buffer.end()
+            codel_buffer.end()
             break
     
         os.system("clear")
         print_keyboard_commands_info()
 
         if command == "p" or command == "P":
-            normal_buffer.print_buffer_info()
+            normal_buffer.print_buffer_info("no bufferbloat algorithm")
+            codel_buffer.print_buffer_info("CoDel")
         elif command == "b" or command == "B":
             for i in range(normal_buffer.buffer_size):
                 normal_buffer.add_packet_to_buffer(5)
+                codel_buffer.add_packet_to_buffer(5)
             print("Bufferbloat!")
             print("")
             print("")
