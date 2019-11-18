@@ -48,7 +48,7 @@ class Queue:
         print("]")
 
 
-class NormalBuffer:
+class Buffer:
     def __init__(self, buffer_size = int(100), transfer_time = 50e-3):
         self.buffer = Queue(size=buffer_size)
         self.current_packet = 0
@@ -157,7 +157,7 @@ def plot_average_times(buffer, name=None):
 
 
 if __name__ == "__main__":
-    normal_buffer = NormalBuffer()
+    normal_buffer = Buffer()
 
     os.system("clear")
     print_keyboard_commands_info()
@@ -176,14 +176,12 @@ if __name__ == "__main__":
 
         if command == "p" or command == "P":
             normal_buffer.print_buffer_info()
-
         elif command == "b" or command == "B":
             for i in range(normal_buffer.buffer_size):
                 normal_buffer.add_packet_to_buffer(5)
             print("Bufferbloat!")
             print("")
             print("")
-
         else:
             print("")
             print("")
