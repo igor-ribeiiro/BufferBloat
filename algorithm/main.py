@@ -3,6 +3,7 @@ import os
 import random
 import matplotlib.pyplot as plt
 from time import sleep
+from math import fabs
 
 
 class Queue:
@@ -60,6 +61,11 @@ class Buffer:
         self.average_times = []
         self.tracking_time = 0.01
         self.codel = codel
+        self.last_delay_time = 0
+        self.last_delay_time_before_bufferbloat = 0
+        self.TARGET = self.buffer_size * self.transfer_time / 10
+        self.DROP_STATE = False
+        self.INTERVAL = 0.0
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
         self.adding_packets_thread.start()
@@ -103,10 +109,26 @@ class Buffer:
                 self.buffer.pop()
 
     def remove_packet_from_buffer_with_codel(self):
+        time = 0
         while self.running:
+            time += 0.1 * self.transfer_time
             if not self.buffer.is_empty():
-                sleep(self.generate_random_transfer_time())
-                self.buffer.pop()
+                current_delay_time = self.calculate_average_time()
+
+                if fabs(current_delay_time - self.last_delay_time_before_bufferbloat) > self.TARGET:
+                    self.DROP_STATE = False
+
+                if current_delay_time - self.last_delay_time > self.TARGET:
+                    self.DROP_STATE = True
+                    self.last_delay_time_before_bufferbloat = current_delay_time
+
+                if self.DROP_STATE:
+                    self.buffer.pop()
+                    self.INTERVAL = 10
+                else:
+                    sleep(self.generate_random_transfer_time())
+                    self.buffer.pop()
+                self.last_delay_time = current_delay_time
 
     def calculate_average_time(self):
         total_time = 0
