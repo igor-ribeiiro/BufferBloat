@@ -6,7 +6,7 @@ from time import sleep
 
 
 class Queue:
-    def __init__(self, size = 10):
+    def __init__(self, size=10):
         self.size = size
         self.v = [-1 for i in range(size)]
         self.begin_queue = 0
@@ -42,14 +42,14 @@ class Queue:
         print("[", end = '')
         for i in range(self.size_queue):
             if i == self.size_queue-1:
-                print("%d" % self.v[(self.begin_queue + i) % self.size], end = '')
+                print("%d" % self.v[(self.begin_queue + i) % self.size], end='')
             else:
-                print("%d, " % self.v[(self.begin_queue + i) % self.size], end = '')
+                print("%d, " % self.v[(self.begin_queue + i) % self.size], end='')
         print("]")
 
 
 class Buffer:
-    def __init__(self, buffer_size = int(100), transfer_time = 50e-3):
+    def __init__(self, buffer_size=int(100), transfer_time=50e-3, codel=False):
         self.buffer = Queue(size=buffer_size)
         self.current_packet = 0
         self.buffer_lock = threading.Lock()
@@ -59,11 +59,16 @@ class Buffer:
         self.error_ammout = 0.02  # 2 percent error
         self.average_times = []
         self.tracking_time = 0.01
+        self.codel = codel
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
         self.adding_packets_thread.start()
-        self.removing_packets_thread = threading.Thread(target=self.remove_packet_from_buffer)
-        self.removing_packets_thread.start()
+        if not codel:
+            self.removing_packets_thread = threading.Thread(target=self.remove_packet_from_buffer)
+            self.removing_packets_thread.start()
+        else:
+            self.removing_packets_thread = threading.Thread(target=self.remove_packet_from_buffer_with_codel)
+            self.removing_packets_thread.start()
         self.keep_track_of_times_thread = threading.Thread(target=self.keep_track_of_averages_times)
         self.keep_track_of_times_thread.start()
 
@@ -73,7 +78,7 @@ class Buffer:
         self.removing_packets_thread.join()
         self.keep_track_of_times_thread.join()
 
-    def add_packet_to_buffer(self, packet = None):
+    def add_packet_to_buffer(self, packet=None):
         if not self.buffer.is_full():
             if packet is None:
                 self.buffer.push(self.current_packet)
@@ -90,20 +95,18 @@ class Buffer:
             if not self.buffer.is_full():
                 sleep(self.generate_random_transfer_time())
                 self.add_packet_to_buffer()
-            else:
-                pass
-                # print("Buffer is full, not adding packet = %d" % self.current_packet)
 
     def remove_packet_from_buffer(self):
         while self.running:
             if not self.buffer.is_empty():
                 sleep(self.generate_random_transfer_time())
                 self.buffer.pop()
-                # packet = self.buffer.pop()
-                # print("Packet = %d was removed from buffer" % packet)
-            else:
-                pass
-                # print("Buffer is empty, not removing packet")
+
+    def remove_packet_from_buffer_with_codel(self):
+        while self.running:
+            if not self.buffer.is_empty():
+                sleep(self.generate_random_transfer_time())
+                self.buffer.pop()
 
     def calculate_average_time(self):
         total_time = 0
@@ -125,7 +128,7 @@ class Buffer:
             self.print_buffer_info()
 
     def print_queue(self):
-        print("Buffer = ", end = '')
+        print("Buffer = ", end='')
         self.buffer.print()
 
     def keep_track_of_averages_times(self):
@@ -139,6 +142,7 @@ def print_keyboard_commands_info():
     print("Press b to simulate a buffer bloat")
     print("Press e or q to exit")
     print("")
+
 
 def plot_average_times(buffer, name=None):
     average_times = buffer.average_times
@@ -158,6 +162,7 @@ def plot_average_times(buffer, name=None):
 
 if __name__ == "__main__":
     normal_buffer = Buffer()
+    codel_buffer = Buffer(codel=True)
 
     os.system("clear")
     print_keyboard_commands_info()
@@ -188,4 +193,4 @@ if __name__ == "__main__":
             print("")
 
     plot_average_times(normal_buffer, "no bufferbloat algorithm")
-    # plot_average_times(normal_buffer, "CoDel")
+    plot_average_times(codel_buffer, "CoDel")
