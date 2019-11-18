@@ -1,3 +1,6 @@
+import threading
+from time import sleep
+
 class Buffer:
     def __init__(self, size = 10):
         self.size = size
@@ -40,21 +43,28 @@ class PacketFlow:
     def __init__(self):
         self.buffer = Buffer(size=10)
         self.current_packet = 0
+        self.buffer_lock = threading.Lock()
 
     def add_packet_to_buffer(self):
-        if not self.buffer.is_full():
-            self.buffer.push(self.current_packet)
-            print("Packet = %d was added to buffer" % self.current_packet)
-            self.current_packet += 1
-        else:
-            print("Buffer is full, not adding packet = %d" % self.current_packet)
+        while(True):
+            sleep(2)
+            with self.buffer_lock:
+                if not self.buffer.is_full():
+                    self.buffer.push(self.current_packet)
+                    print("Packet = %d was added to buffer" % self.current_packet)
+                    self.current_packet += 1
+                else:
+                    print("Buffer is full, not adding packet = %d" % self.current_packet)
 
     def remove_packet_from_buffer(self):
-        if not self.buffer.is_empty():
-            packet = self.buffer.pop()
-            print("Packet = %d was removed from buffer" % packet)
-        else:
-            print("Buffer is empty, not removing packet")
+        while True:
+            sleep(3)
+            with self.buffer_lock:
+                if not self.buffer.is_empty():
+                    packet = self.buffer.pop()
+                    print("Packet = %d was removed from buffer" % packet)
+                else:
+                    print("Buffer is empty, not removing packet")
 
     def print_queue(self):
         self.buffer.print()
@@ -63,13 +73,11 @@ class PacketFlow:
 if __name__ == "__main__":
     packet_flow = PacketFlow()
 
-    for i in range(12):
-        packet_flow.print_queue()
-        packet_flow.add_packet_to_buffer()
+    adding_packets_thread = threading.Thread(target=packet_flow.add_packet_to_buffer)
+    adding_packets_thread.start()
 
-    for i in range(3):
-        packet_flow.remove_packet_from_buffer()
-        packet_flow.print_queue()
+    removing_packets_thread = threading.Thread(target=packet_flow.remove_packet_from_buffer)
+    removing_packets_thread.start()
 
-    packet_flow.add_packet_to_buffer()
+    adding_packets_thread.join()
     packet_flow.print_queue()
