@@ -1,5 +1,6 @@
 import threading
 import os
+import random
 from time import sleep
 
 
@@ -46,13 +47,14 @@ class Buffer:
         print("]")
 
 class PacketFlow:
-    def __init__(self, buffer_size = int(3), transfer_time = 50e-3):
+    def __init__(self, buffer_size = int(100), transfer_time = 50e-3):
         self.buffer = Buffer(size=buffer_size)
         self.current_packet = 0
         self.buffer_lock = threading.Lock()
         self.transfer_time = transfer_time  # in seconds. This is the sleep time
         self.buffer_size = buffer_size
         self.running = True
+        self.error_ammout = 1.0 / 10.0  # 10 percent error
 
     def add_packet_to_buffer(self, packet = None):
         if not self.buffer.is_full():
@@ -63,10 +65,13 @@ class PacketFlow:
             else:
                 self.buffer.push(packet)
 
+    def generate_random_transfer_time(self):
+        return self.transfer_time + self.transfer_time * self.error_ammout * random.uniform(-0.5, 0.5)
+
     def keep_adding_packet_to_buffer(self):
         while self.running:
             if not self.buffer.is_full():
-                sleep(self.transfer_time)
+                sleep(self.generate_random_transfer_time())
                 self.add_packet_to_buffer()
             else:
                 pass
@@ -75,7 +80,7 @@ class PacketFlow:
     def remove_packet_from_buffer(self):
         while self.running:
             if not self.buffer.is_empty():
-                sleep(self.transfer_time)
+                sleep(self.generate_random_transfer_time())
                 self.buffer.pop()
                 # packet = self.buffer.pop()
                 # print("Packet = %d was removed from buffer" % packet)
@@ -83,10 +88,17 @@ class PacketFlow:
                 pass
                 # print("Buffer is empty, not removing packet")
 
+    def calculate_average_time(self):
+        total_time = 0
+        size = self.buffer.size_queue
+        for _ in range(size):
+            total_time += self.generate_random_transfer_time()
+
+        return total_time
+
     def print_buffer_info(self):
         print("Buffer size = ", self.buffer.size_queue)
-        print("Average time for a packet to deliver = %.3fs" \
-            % (self.transfer_time * self.buffer.size_queue))
+        print("Average time for a packet to deliver = %.3fs" % self.calculate_average_time())
         
         print("")
 
@@ -99,6 +111,14 @@ class PacketFlow:
         print("Buffer = ", end = '')
         self.buffer.print()
 
+
+def print_keyboard_commands_info():
+    print("Press p to print info about the buffer")
+    print("Press b to simulate a buffer bloat")
+    print("Press e or q to exit")
+    print("")
+
+
 if __name__ == "__main__":
     packet_flow = PacketFlow()
 
@@ -109,27 +129,32 @@ if __name__ == "__main__":
     removing_packets_thread.start()
 
     os.system("clear")
-    print("Press p to print info about the buffer")
-    print("Press b to simulate a buffer bloat")
-    print("Press e to exit")
+    print_keyboard_commands_info()
+    print("")
+    print("")
+    print("")
 
     while True:
         command = input("Command: ")
-        if command == 'e' or command == 'E':
+        if command == 'e' or command == 'E' or command == 'q' or command == "Q":
             packet_flow.running = False
             break
         os.system("clear")
-        print("Press p to print info about the buffer")
-        print("Press b to simulate a buffer bloat")
-        print("Press e to exit")
-        print("")
+        print_keyboard_commands_info()
 
         if command == "p" or command == "P":
             packet_flow.print_buffer_info()
 
-        if command == "b" or command == "B":
+        elif command == "b" or command == "B":
             for i in range(packet_flow.buffer_size):
                 packet_flow.add_packet_to_buffer(5)
+            print("")
+            print("")
+            print("")
+
+        else:
+            print("")
+            print("")
             print("")
 
     adding_packets_thread.join()
