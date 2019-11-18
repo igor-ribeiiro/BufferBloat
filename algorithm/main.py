@@ -59,6 +59,7 @@ class Buffer:
         self.running = True
         self.error_ammout = 0.02  # 2 percent error
         self.average_times = []
+        self.number_of_packets = []
         self.tracking_time = 0.01
         self.codel = codel
         self.last_delay_time = 0
@@ -66,6 +67,7 @@ class Buffer:
         self.TARGET = self.buffer_size * self.transfer_time / 10
         self.DROP_STATE = False
         self.INTERVAL = 100 * self.transfer_time
+        self.removal_ratio = 0.4
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
         self.adding_packets_thread.start()
@@ -105,7 +107,7 @@ class Buffer:
     def remove_packet_from_buffer(self):
         while self.running:
             if not self.buffer.is_empty():
-                sleep(self.generate_random_transfer_time())
+                sleep(self.generate_random_transfer_time() * self.removal_ratio)
                 self.buffer.pop()
 
     def remove_packet_from_buffer_with_codel(self):
@@ -117,13 +119,10 @@ class Buffer:
                 current_delay_time = self.calculate_average_time()
 
                 if self.DROP_STATE and fabs(current_delay_time - self.last_delay_time_before_bufferbloat) < self.TARGET:
-                    print("Saiu no DROP STATE")
                     self.DROP_STATE = False
 
                 if current_delay_time - self.last_delay_time > self.TARGET:
-                    print("Entrou no DROP STATE")
                     self.DROP_STATE = True
-                    print("last_delay_time_before_bufferbloat", self.last_delay_time_before_bufferbloat)
                     self.last_delay_time_before_bufferbloat = self.last_delay_time
 
                 if self.DROP_STATE:
@@ -131,8 +130,8 @@ class Buffer:
                         time = 0
                         self.buffer.pop()
                         self.INTERVAL *= 1 + 2.7 / self.buffer_size
-                else:
-                    sleep(self.generate_random_transfer_time())
+
+                    sleep(self.generate_random_transfer_time() * self.removal_ratio)
                     self.buffer.pop()
 
                 self.last_delay_time = current_delay_time
@@ -152,11 +151,6 @@ class Buffer:
         
         print("")
 
-    def keep_printing_buffer_info(self):
-        while self.running:
-            sleep(1)
-            self.print_buffer_info()
-
     def print_queue(self):
         print("Buffer = ", end='')
         self.buffer.print()
@@ -165,6 +159,7 @@ class Buffer:
         while self.running:
             sleep(self.tracking_time)
             self.average_times.append(self.calculate_average_time())
+            self.number_of_packets.append(self.buffer.size_queue)
 
 
 def print_keyboard_commands_info():
@@ -188,6 +183,26 @@ def plot_average_times(buffer):
     plt.suptitle('Total delay in buffer')
     plt.xlabel('Time (s)')
     plt.ylabel('Average time for a packet to be delivered (s)')
+
+
+def plot_number_of_packets(buffer, codel=False):
+    number_of_packets = buffer.number_of_packets
+
+    xs = []
+    ys = []
+    for i in range(len(number_of_packets)):
+        xs.append((i+1) * buffer.tracking_time)
+        ys.append(number_of_packets[i])
+
+    plt.plot(xs, ys)
+    if codel:
+        plt.legend(['CoDel'])
+    else:
+        plt.legend(['no bufferbloat algorithm'])
+        
+    plt.suptitle('Number of packets in buffer')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Number of packets')
 
 
 if __name__ == "__main__":
@@ -227,4 +242,8 @@ if __name__ == "__main__":
 
     plot_average_times(normal_buffer)
     plot_average_times(codel_buffer)
+    plt.show()
+
+    plot_number_of_packets(normal_buffer)
+    plot_number_of_packets(codel_buffer, codel=True)
     plt.show()
