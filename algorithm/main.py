@@ -56,9 +56,9 @@ class NormalBuffer:
         self.transfer_time = transfer_time  # in seconds. This is the sleep time
         self.buffer_size = buffer_size
         self.running = True
-        self.error_ammout = 0.05  # 5 percent error
+        self.error_ammout = 0.01  # 5 percent error
         self.average_times = []
-        self.tracking_time = 0.01
+        self.tracking_time = 0.02
 
         self.adding_packets_thread = threading.Thread(target=self.keep_adding_packet_to_buffer)
         self.adding_packets_thread.start()
