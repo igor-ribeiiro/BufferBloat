@@ -1,4 +1,5 @@
 import threading
+import os
 from time import sleep
 
 
@@ -36,33 +37,45 @@ class Buffer:
         return self.size_queue == 0
 
     def print(self):
+        print("[", end = '')
         for i in range(self.size_queue):
-            print("%d " % self.v[(self.begin_queue + i) % self.size], end = '')
-        print("")
-
+            if i == self.size_queue-1:
+                print("%d" % self.v[(self.begin_queue + i) % self.size], end = '')
+            else:
+                print("%d, " % self.v[(self.begin_queue + i) % self.size], end = '')
+        print("]")
 
 class PacketFlow:
-    def __init__(self, buffer_size = int(10), sleep_time = 5e-3):
+    def __init__(self, buffer_size = int(3), transfer_time = 50e-3):
         self.buffer = Buffer(size=buffer_size)
         self.current_packet = 0
         self.buffer_lock = threading.Lock()
-        self.transfer_time = sleep_time  # in seconds. This is the sleep time
+        self.transfer_time = transfer_time  # in seconds. This is the sleep time
+        self.buffer_size = buffer_size
+        self.running = True
 
-    def add_packet_to_buffer(self):
-        while(True):
-            if not self.buffer.is_full():
-                sleep(self.transfer_time)
+    def add_packet_to_buffer(self, packet = None):
+        if not self.buffer.is_full():
+            if packet is None:
                 self.buffer.push(self.current_packet)
                 # print("Packet = %d was added to buffer" % self.current_packet)
                 self.current_packet += 1
+            else:
+                self.buffer.push(packet)
+
+    def keep_adding_packet_to_buffer(self):
+        while self.running:
+            if not self.buffer.is_full():
+                sleep(self.transfer_time)
+                self.add_packet_to_buffer()
             else:
                 pass
                 # print("Buffer is full, not adding packet = %d" % self.current_packet)
 
     def remove_packet_from_buffer(self):
-        while True:
+        while self.running:
             if not self.buffer.is_empty():
-                sleep(self.transfer_time*2)
+                sleep(self.transfer_time)
                 self.buffer.pop()
                 # packet = self.buffer.pop()
                 # print("Packet = %d was removed from buffer" % packet)
@@ -71,28 +84,53 @@ class PacketFlow:
                 # print("Buffer is empty, not removing packet")
 
     def print_buffer_info(self):
-        while True:
+        print("Buffer size = ", self.buffer.size_queue)
+        print("Average time for a packet to deliver = %.3fs" \
+            % (self.transfer_time * self.buffer.size_queue))
+        
+        print("")
+
+    def keep_printing_buffer_info(self):
+        while self.running:
             sleep(1)
-            print("Queue size = ", self.buffer.size_queue)
+            self.print_buffer_info()
 
     def print_queue(self):
+        print("Buffer = ", end = '')
         self.buffer.print()
-
 
 if __name__ == "__main__":
     packet_flow = PacketFlow()
 
-    adding_packets_thread = threading.Thread(target=packet_flow.add_packet_to_buffer)
+    adding_packets_thread = threading.Thread(target=packet_flow.keep_adding_packet_to_buffer)
     adding_packets_thread.start()
 
     removing_packets_thread = threading.Thread(target=packet_flow.remove_packet_from_buffer)
     removing_packets_thread.start()
 
-    printing_buffer_thread = threading.Thread(target=packet_flow.print_buffer_info)
-    printing_buffer_thread.start()
+    os.system("clear")
+    print("Press p to print info about the buffer")
+    print("Press b to simulate a buffer bloat")
+    print("Press e to exit")
 
+    while True:
+        command = input("Command: ")
+        if command == 'e' or command == 'E':
+            packet_flow.running = False
+            break
+        os.system("clear")
+        print("Press p to print info about the buffer")
+        print("Press b to simulate a buffer bloat")
+        print("Press e to exit")
+        print("")
 
+        if command == "p" or command == "P":
+            packet_flow.print_buffer_info()
+
+        if command == "b" or command == "B":
+            for i in range(packet_flow.buffer_size):
+                packet_flow.add_packet_to_buffer(5)
+            print("")
 
     adding_packets_thread.join()
     removing_packets_thread.join()
-    printing_buffer_thread.join()
