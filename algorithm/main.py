@@ -55,7 +55,8 @@ class PacketFlow:
         self.buffer_size = buffer_size
         self.running = True
         self.error_ammout = 1.0 / 10.0  # 10 percent error
-        self.averages_times = []
+        self.average_times = []
+        self.tracking_time = 0.1
 
     def add_packet_to_buffer(self, packet = None):
         if not self.buffer.is_full():
@@ -114,9 +115,9 @@ class PacketFlow:
 
     def keep_track_of_averages_times(self):
         while self.running:
-            sleep(1)
-            self.averages_times.append(self.calculate_average_time())
-        print("Average times = ", self.averages_times)
+            sleep(self.tracking_time)
+            self.average_times.append(self.calculate_average_time())
+
 
 def print_keyboard_commands_info():
     print("Press p to print info about the buffer")
@@ -169,3 +170,6 @@ if __name__ == "__main__":
     adding_packets_thread.join()
     removing_packets_thread.join()
     keep_track_of_times_thread.join()
+
+    average_times = packet_flow.average_times
+    print("Average times = ", average_times)
